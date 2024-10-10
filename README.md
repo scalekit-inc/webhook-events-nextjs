@@ -4,14 +4,7 @@
 
 This sample Next.js application demonstrates how to use Webhooks to register and listen for events from ScaleKit. It specifically focuses on handling the `scalekit.dir.user.create` event type.
 
-## Table of Contents
-
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Supported Event Types](#supported-event-types)
-- [Example Event](#example-event)
+![](./assets/screenshot.png)
 
 ## Features
 
