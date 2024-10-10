@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { addEvent, retrieveEvents } from './store';
 
 /**
  * Webhook Endpoint using Next.js App Router v14.2
@@ -12,29 +13,28 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   // Parse the JSON body of the request
   const event = await req.json();
+  console.log('Event received:', event);
 
   // Destructure to get necessary data from the event
-  console.log('Event received:', event);
   const { email, name } = event.data;
 
-  // event.data
-  // event
-  // root:{ data:}
   // Call a function to perform business logic
-  await createUserAccount(email, name);
+  await createUserAccount(email, name, event);
 
   // Return a JSON response with a status code of 200
-  return NextResponse.json({ status: 200 });
+  return NextResponse.json({ status: 201 });
 }
 
 export async function GET(req: NextRequest) {
-  console.log('GET request received');
+  const events = await retrieveEvents();
   return NextResponse.json(
-    { message: 'GET request received' },
+    { message: 'Events retrieved', events },
     { status: 200 },
   );
 }
 
-async function createUserAccount(email: string, name: string) {
+async function createUserAccount(email: string, name: string, event: any) {
   console.log('Creating user account with email:', email, 'and name:', name);
+  await addEvent(event);
+  console.info('Event added to store in memory');
 }
