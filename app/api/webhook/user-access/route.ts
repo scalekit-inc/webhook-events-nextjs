@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addEvent, retrieveEvents } from './store';
+import { scalekit } from '@scalekit/node';
 
 /**
  * Webhook Endpoint using Next.js App Router v14.2
@@ -13,9 +14,19 @@ import { addEvent, retrieveEvents } from './store';
 export async function POST(req: NextRequest) {
   // Parse the JSON body of the request
   const event = await req.json();
+  const headers = req.headers;
+  // Secret from Scalekit Dasbhoard > Webhooks
+  const secret = process.env.SCALEKIT_WEBHOOK_SECRET;
+
+  // Verify the signature of the event
+  try {
+    await scalekit.verifyWebhookPayload(secret, headers, event);
+  } catch (error) {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+  }
+
   console.log('Event received:', event);
 
-  // Destructure to get necessary data from the event
   const { email, name } = event.data;
 
   // Call a function to perform business logic
