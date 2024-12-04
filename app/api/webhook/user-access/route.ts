@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addEvent, retrieveEvents } from './store';
-import { scalekit } from '@scalekit/node';
+import { ScalekitClient } from '@scalekit-sdk/node';
+
+const scalekit = new ScalekitClient(
+  process.env.SCALEKIT_ENV_URL ?? '',
+  process.env.SCALEKIT_CLIENT_ID ?? '',
+  process.env.SCALEKIT_CLIENT_SECRET ?? '',
+);
 
 /**
  * Webhook Endpoint using Next.js App Router v14.2
@@ -20,8 +26,15 @@ export async function POST(req: NextRequest) {
 
   // Verify the signature of the event
   try {
+    if (!secret) {
+      return NextResponse.json(
+        { error: 'Webhook secret not configured' },
+        { status: 500 },
+      );
+    }
     await scalekit.verifyWebhookPayload(secret, headers, event);
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Webhook verification failed:', error.message);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
