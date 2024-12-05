@@ -12,9 +12,9 @@ if (!process.env.SCALEKIT_CLIENT_SECRET) {
   throw new Error('SCALEKIT_CLIENT_SECRET is required');
 }
 const scalekit = new ScalekitClient(
-  process.env.SCALEKIT_ENV_URL ?? '',
-  process.env.SCALEKIT_CLIENT_ID ?? '',
-  process.env.SCALEKIT_CLIENT_SECRET ?? '',
+  process.env.SCALEKIT_ENV_URL,
+  process.env.SCALEKIT_CLIENT_ID,
+  process.env.SCALEKIT_CLIENT_SECRET,
 );
 
 /**
