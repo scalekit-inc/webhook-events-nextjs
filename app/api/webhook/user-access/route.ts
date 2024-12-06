@@ -2,10 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { addEvent, retrieveEvents } from './store';
 import { ScalekitClient } from '@scalekit-sdk/node';
 
+if (!process.env.SCALEKIT_ENV_URL) {
+  throw new Error('SCALEKIT_ENV_URL is required');
+}
+if (!process.env.SCALEKIT_CLIENT_ID) {
+  throw new Error('SCALEKIT_CLIENT_ID is required');
+}
+if (!process.env.SCALEKIT_CLIENT_SECRET) {
+  throw new Error('SCALEKIT_CLIENT_SECRET is required');
+}
 const scalekit = new ScalekitClient(
-  process.env.SCALEKIT_ENV_URL ?? '',
-  process.env.SCALEKIT_CLIENT_ID ?? '',
-  process.env.SCALEKIT_CLIENT_SECRET ?? '',
+  process.env.SCALEKIT_ENV_URL,
+  process.env.SCALEKIT_CLIENT_ID,
+  process.env.SCALEKIT_CLIENT_SECRET,
 );
 
 /**
@@ -20,28 +29,30 @@ const scalekit = new ScalekitClient(
 export async function POST(req: NextRequest) {
   // Parse the JSON body of the request
   const event = await req.json();
-  const headers = req.headers;
+    // Convert headers (Headers) to a plain object (Record<string, string>)
+    const headers = Object.fromEntries(req.headers.entries());
   // Secret from Scalekit Dasbhoard > Webhooks
   const secret = process.env.SCALEKIT_WEBHOOK_SECRET;
 
   // Verify the signature of the event
   try {
     if (!secret) {
-      return NextResponse.json(
-        { error: 'Webhook secret not configured' },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+      
     }
-    await scalekit.verifyWebhookPayload(secret, headers, event);
+    // Verify webhook payload with headers and event data
+    await scalekit.verifyWebhookPayload(secret, headers, JSON.stringify(event));
+    console.log('Webhook verification passed');
   } catch (error: any) {
+    
     console.error('Webhook verification failed:', error.message);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
+  
 
   console.log('Event received:', event);
 
   const { email, name } = event.data;
-
   // Call a function to perform business logic
   await createUserAccount(email, name, event);
 
