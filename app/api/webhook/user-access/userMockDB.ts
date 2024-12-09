@@ -29,6 +29,10 @@ class UserMockDB {
     return false;
 
   }
+  async getUserById(userId: string): Promise<User | null> {
+    const user = this.users.find((u) => u.id === userId);
+    return user || null; 
+  }
 
   async deleteUser(userId: string): Promise<boolean> {
     const index = this.users.findIndex((u) => u.id === userId);

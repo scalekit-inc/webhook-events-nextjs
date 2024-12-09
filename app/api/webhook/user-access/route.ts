@@ -41,50 +41,66 @@ export async function POST(req: NextRequest) {
     await scalekit.verifyWebhookPayload(secret, headers, JSON.stringify(event));
     console.log('Webhook verification passed');
 
-    // Store the event in the EventMockDB
-    await eventMockDB.insertEvent(event);
+    // Acknowledge the webhook immediately
+    setImmediate(async () => {
+      try {
+        // Log the event
+        console.log('Processing event:', event);
 
-    // log the event
-    console.log('Event received:', event);
+        // Store the event in the EventMockDB
+        await eventMockDB.insertEvent(event);
 
-    // Process the event
-    if (event.type === 'scalekit.dir.user.create') {
-      const { id, email, name } = event.data;
-      if (!id || !email || !name) {
-        console.error('Missing required fields for user creation:', { id, email, name });
-        return NextResponse.json({ error: 'Invalid user creation event data' }, { status: 400 });
-      }
-      await userMockDB.createUser({ id: event.data.id, email, name });
-    } else if (event.type === 'scalekit.dir.user.update') {
-      const { id, ...updates } = event.data;
-      if (!id) {
-        console.error('Missing user ID for update:', { id, updates });
-        return NextResponse.json({ error: 'Invalid user update event data' }, { status: 400 });
-      } const success = await userMockDB.updateUser(id, updates);
-      if (!success) {
-        console.log(`User with ID ${id} not found for update`);
-        const { email, name } = updates;
-        if (!email || !name) {
-          console.error('Missing fields for creating user:', { id, email, name });
-          return NextResponse.json({ error: 'Insufficient data to create user' }, { status: 400 });
+        // Process the event
+        if (event.type === 'scalekit.dir.user.create') {
+          const { id, email, name } = event.data;
+          if (!id || !email || !name) {
+            console.error('Missing required fields for user creation:', { id, email, name });
+            return;
+          }
+          // Check if the user already exists
+          const existingUser = await userMockDB.getUserById(id);
+          if (existingUser) {
+            // Update existing user
+            await userMockDB.updateUser(id, { email, name });
+            console.log(`User with ID ${id} updated.`);
+          } else {
+            // Create new user
+            await userMockDB.createUser({ id, email, name });
+            console.log(`User with ID ${id} created.`);
+          }
+        }  else if (event.type === 'scalekit.dir.user.update') {
+          const { id, ...updates } = event.data;
+          if (!id) {
+            console.error('Missing user ID for update:', { id, updates });
+            return;
+          }
+          const success = await userMockDB.updateUser(id, updates);
+          if (!success) {
+            console.log(`User with ID ${id} not found for update`);
+            const { email, name } = updates;
+            if (!email || !name) {
+              console.error('Missing fields for creating user:', { id, email, name });
+              return;
+            }
+            await userMockDB.createUser({ id, email, name });
+            console.log(`User with ID ${id} successfully created.`);
+          }
+        } else if (event.type === 'scalekit.dir.user.delete') {
+          await userMockDB.deleteUser(event.data.id);
+        } else {
+          console.log(`Unhandled event type: ${event.type}`);
         }
-        // Create a new user
-        await userMockDB.createUser({ id, email, name });
-        console.log(`User with ID ${id} successfully created.`);
+      } catch (error: any) {
+        console.error('Error processing webhook event asynchronously:', error.message);
       }
+    });
 
-    } else if (event.type === 'scalekit.dir.user.delete') {
-      await userMockDB.deleteUser(event.data.id);
-    } else {
-      console.log(`Unhandled event type: ${event.type}`);
-    }
+    // Return a success response immediately
+    return NextResponse.json({ message: 'Webhook received' }, { status: 201 });
   } catch (error: any) {
-    console.error('Error handling webhook:', error.message);
+    console.error('Error verifying webhook:', error.message);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
-
-  // Always return 200 for webhook endpoints
-  return NextResponse.json({ message: 'Event processed' }, { status: 200 });
 }
 
 export async function GET(req: NextRequest) {
