@@ -24,7 +24,7 @@ class UserMockDB {
     console.log(`User not found for update: ${userId}`);
     console.log('Current users in DB:', await userMockDB.getAllUsers());
     return false;
-    
+
   }
 
   async deleteUser(userId: string): Promise<boolean> {

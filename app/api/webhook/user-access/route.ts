@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       if (!id) {
         console.error('Missing user ID for update:', { id, updates });
         return NextResponse.json({ error: 'Invalid user update event data' }, { status: 400 });
-      }const success = await userMockDB.updateUser(id, updates);
+      } const success = await userMockDB.updateUser(id, updates);
       if (!success) {
         console.error(`User with ID ${id} not found for update`);
       }

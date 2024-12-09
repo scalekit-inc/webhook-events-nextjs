@@ -16,7 +16,7 @@ class EventMockDB {
     console.log(`Retrieved ${this.events.length} events`);
     return this.events;
   }
-  
+
 }
 
 const eventMockDB = new EventMockDB();
