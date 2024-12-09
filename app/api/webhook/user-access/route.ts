@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import eventMockDB from './store'; 
-import userMockDB from './userMockDB'; 
+import eventMockDB from './store';
+import userMockDB from './userMockDB';
 import { ScalekitClient } from '@scalekit-sdk/node';
 
 
@@ -62,9 +62,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid user update event data' }, { status: 400 });
       } const success = await userMockDB.updateUser(id, updates);
       if (!success) {
-        console.error(`User with ID ${id} not found for update`);
+        console.log(`User with ID ${id} not found for update`);
+        const { email, name } = updates;
+        if (!email || !name) {
+          console.error('Missing fields for creating user:', { id, email, name });
+          return NextResponse.json({ error: 'Insufficient data to create user' }, { status: 400 });
+        }
+        // Create a new user
+        await userMockDB.createUser({ id, email, name });
+        console.log(`User with ID ${id} successfully created.`);
       }
-      
+
     } else if (event.type === 'scalekit.dir.user.delete') {
       await userMockDB.deleteUser(event.data.id);
     } else {

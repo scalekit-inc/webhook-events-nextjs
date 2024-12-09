@@ -8,8 +8,14 @@ class UserMockDB {
   private users: User[] = [];
 
   async createUser(user: User): Promise<void> {
-    this.users.push(user);
-    console.log(`User created:`, user);
+    const index = this.users.findIndex((u) => u.id === user.id);
+    if (index !== -1) {
+      this.users[index] = user; // Replace existing user
+      console.log(`User with ID ${user.id} updated.`);
+    } else {
+      this.users.push(user);
+      console.log(`User created:`, user);
+    }
   }
 
   async updateUser(userId: string, updatedData: Partial<User>): Promise<boolean> {
