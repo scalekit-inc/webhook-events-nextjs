@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import userMockDB from '../webhook/user-access/userMockDB'; 
+import userMockDB from '../webhook/user-access/userDB'; 
 
 /**
  * API Endpoint: /api/users

@@ -1,0 +1,52 @@
+import { User } from '../../types/types';
+
+
+class UserMockDB {
+  private users: User[] = [];
+
+ 
+  async createUser(user: User): Promise<void> {
+    const index = this.users.findIndex((u) => u.id === user.id);
+    if (index !== -1) {
+      this.users[index] = user; // Replace existing user
+      console.log(`User with ID ${user.id} updated.`);
+    } else {
+      this.users.push(user);
+      console.log(`User created:`, user);
+    }
+  }
+
+  async updateUser(userId: string, updatedData: Partial<User>): Promise<boolean> {
+    const index = this.users.findIndex((u) => u.id === userId);
+    if (index !== -1) {
+      this.users[index] = { ...this.users[index], ...updatedData };
+      console.log(`User updated:`, this.users[index]);
+      return true;
+    }
+    console.log(`User not found for update: ${userId}`);
+    return false;
+
+  }
+  async getUserByEmail(email: string): Promise<User | null> {
+    const user = this.users.find((u) => u.email === email);
+    return user || null;
+  }
+
+  async deleteUserByID(userId: string): Promise<boolean> {
+    const index = this.users.findIndex((u) => u.id === userId);
+    if (index !== -1) {
+      const deletedUser = this.users.splice(index, 1);
+      console.log(`User deleted:`, deletedUser[0]);
+      return true;
+    }
+    console.log(`User not found for deletion: ${userId}`);
+    return false;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return this.users;
+  }
+}
+
+const userMockDB = new UserMockDB();
+export default userMockDB;
