@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import eventMockDB from './store'; // For event storage
-import userMockDB from './userMockDB'; // For user CRUD
+import eventMockDB from './store'; 
+import userMockDB from './userMockDB'; 
 import { ScalekitClient } from '@scalekit-sdk/node';
 
 
