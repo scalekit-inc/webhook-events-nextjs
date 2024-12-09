@@ -30,7 +30,11 @@ const scalekit = new ScalekitClient(
 
 export async function POST(req: NextRequest) {
   const event = await req.json();
+  ``
+  // Convert headers (Headers) to a plain object (Record<string, string>)
   const headers = Object.fromEntries(req.headers.entries());
+
+  // Secret from Scalekit Dasbhoard > Webhooks
   const secret = process.env.SCALEKIT_WEBHOOK_SECRET;
 
   try {
@@ -41,54 +45,33 @@ export async function POST(req: NextRequest) {
     await scalekit.verifyWebhookPayload(secret, headers, JSON.stringify(event));
     console.log('Webhook verification passed');
 
+    // Store the event 
+    await eventMockDB.insertEvent(event);
+
     // Acknowledge the webhook immediately
     setImmediate(async () => {
       try {
         // Log the event
         console.log('Processing event:', event);
 
-        // Store the event in the EventMockDB
-        await eventMockDB.insertEvent(event);
 
         // Process the event
-        if (event.type === 'scalekit.dir.user.create') {
-          const { id, email, name } = event.data;
-          if (!id || !email || !name) {
-            console.error('Missing required fields for user creation:', { id, email, name });
-            return;
-          }
-          // Check if the user already exists
-          const existingUser = await userMockDB.getUserById(id);
-          if (existingUser) {
-            // Update existing user
-            await userMockDB.updateUser(id, { email, name });
-            console.log(`User with ID ${id} updated.`);
-          } else {
-            // Create new user
-            await userMockDB.createUser({ id, email, name });
-            console.log(`User with ID ${id} created.`);
-          }
-        }  else if (event.type === 'scalekit.dir.user.update') {
-          const { id, ...updates } = event.data;
-          if (!id) {
-            console.error('Missing user ID for update:', { id, updates });
-            return;
-          }
-          const success = await userMockDB.updateUser(id, updates);
-          if (!success) {
-            console.log(`User with ID ${id} not found for update`);
-            const { email, name } = updates;
-            if (!email || !name) {
-              console.error('Missing fields for creating user:', { id, email, name });
-              return;
-            }
-            await userMockDB.createUser({ id, email, name });
-            console.log(`User with ID ${id} successfully created.`);
-          }
-        } else if (event.type === 'scalekit.dir.user.delete') {
-          await userMockDB.deleteUser(event.data.id);
-        } else {
-          console.log(`Unhandled event type: ${event.type}`);
+        switch (event.type) {
+          case 'scalekit.dir.user.create':
+            await userMockDB.processUserCreate(event);
+            break;
+
+          case 'scalekit.dir.user.update':
+            await userMockDB.processUserUpdate(event);
+            break;
+
+          case 'scalekit.dir.user.delete':
+            await userMockDB.processUserDelete(event.data.id);
+            break;
+
+          default:
+            console.log(`Unhandled event type: ${event.type}`);
+            break;
         }
       } catch (error: any) {
         console.error('Error processing webhook event asynchronously:', error.message);
