@@ -4,81 +4,45 @@ import userMockDB from './userMockDB';
 import { ScalekitClient } from '@scalekit-sdk/node';
 
 
-if (!process.env.SCALEKIT_ENV_URL) {
-  throw new Error('SCALEKIT_ENV_URL is required');
-}
-if (!process.env.SCALEKIT_CLIENT_ID) {
-  throw new Error('SCALEKIT_CLIENT_ID is required');
-}
-if (!process.env.SCALEKIT_CLIENT_SECRET) {
-  throw new Error('SCALEKIT_CLIENT_SECRET is required');
-}
+// Utility: Validate required environment variables
+const requiredEnvVars = ['SCALEKIT_ENV_URL', 'SCALEKIT_CLIENT_ID', 'SCALEKIT_CLIENT_SECRET', 'SCALEKIT_WEBHOOK_SECRET'];
+requiredEnvVars.forEach((varName) => {
+  if (!process.env[varName]) {
+    throw new Error(`${varName} is required`);
+  }
+});
+
+// Initialize Scalekit client
 const scalekit = new ScalekitClient(
-  process.env.SCALEKIT_ENV_URL,
-  process.env.SCALEKIT_CLIENT_ID,
-  process.env.SCALEKIT_CLIENT_SECRET,
+  process.env.SCALEKIT_ENV_URL!,
+  process.env.SCALEKIT_CLIENT_ID!,
+  process.env.SCALEKIT_CLIENT_SECRET!,
 );
 
 /**
- * Webhook Endpoint using Next.js App Router v14.2
- * @endpoint /api/webhook/user-access
- * app/api
- * └── webhook
- *     └── user-access
- *         └── route.ts
+ * Webhook Endpoint: /api/webhook/user-access
+ * Handles POST requests to process Scalekit webhook events.
  */
 
 export async function POST(req: NextRequest) {
-  const event = await req.json();
-  ``
-  // Convert headers (Headers) to a plain object (Record<string, string>)
-  const headers = Object.fromEntries(req.headers.entries());
-
-  // Secret from Scalekit Dasbhoard > Webhooks
-  const secret = process.env.SCALEKIT_WEBHOOK_SECRET;
-
   try {
-    if (!secret) {
-      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
-    }
+    const event = await req.json();
 
+    // Convert headers to a plain object
+    const headers = Object.fromEntries(req.headers.entries());
+    const secret = process.env.SCALEKIT_WEBHOOK_SECRET!;
+
+    // Verify the webhook payload
     await scalekit.verifyWebhookPayload(secret, headers, JSON.stringify(event));
     console.log('Webhook verification passed');
 
-    // Store the event 
+    // Store the event
     await eventMockDB.insertEvent(event);
 
-    // Acknowledge the webhook immediately
-    setImmediate(async () => {
-      try {
-        // Log the event
-        console.log('Processing event:', event);
+    // Process the event asynchronously
+    setImmediate(async () => await processEvent(event));
 
-
-        // Process the event
-        switch (event.type) {
-          case 'scalekit.dir.user.create':
-            await userMockDB.processUserCreate(event);
-            break;
-
-          case 'scalekit.dir.user.update':
-            await userMockDB.processUserUpdate(event);
-            break;
-
-          case 'scalekit.dir.user.delete':
-            await userMockDB.processUserDelete(event.data.id);
-            break;
-
-          default:
-            console.log(`Unhandled event type: ${event.type}`);
-            break;
-        }
-      } catch (error: any) {
-        console.error('Error processing webhook event asynchronously:', error.message);
-      }
-    });
-
-    // Return a success response immediately
+    // Return success response
     return NextResponse.json({ message: 'Webhook received' }, { status: 201 });
   } catch (error: any) {
     console.error('Error verifying webhook:', error.message);
@@ -86,11 +50,41 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/**
+ * Handles specific event processing.
+ */
+async function processEvent(event: any) {
+  try {
+    console.log('Processing event:', event);
+
+    switch (event.type) {
+      case 'scalekit.dir.user.create':
+        await userMockDB.processUserCreate(event);
+        break;
+      case 'scalekit.dir.user.update':
+        await userMockDB.processUserUpdate(event);
+        break;
+      case 'scalekit.dir.user.delete':
+        await userMockDB.processUserDelete(event.data.id);
+        break;
+      default:
+        console.warn(`Unhandled event type: ${event.type}`);
+    }
+  } catch (error: any) {
+    console.error('Error processing event:', error.message);
+  }
+}
+
+/**
+ * Fetches all stored events.
+ */
 export async function GET(req: NextRequest) {
-  const events = await eventMockDB.getAllEvents();
-  return NextResponse.json(
-    { message: 'Events retrieved', events },
-    { status: 200 },
-  );
+  try {
+    const events = await eventMockDB.getAllEvents();
+    return NextResponse.json({ message: 'Events retrieved', events }, { status: 200 });
+  } catch (error: any) {
+    console.error('Error fetching events:', error.message);
+    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
+  }
 }
 
