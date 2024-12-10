@@ -1,4 +1,4 @@
-import userDB from './userDB';
+import userDB from './user_DB';
 import { Event } from '../../types/types';
 
 // Function to process user creation
