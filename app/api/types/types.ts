@@ -2,7 +2,7 @@
 export type User = {
     id: string;
     email: string;
-    name: string;
+    name?: string; 
   };
   
   // Define the Event type

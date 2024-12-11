@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import eventMockDB from './store';
 import { ScalekitClient } from '@scalekit-sdk/node';
-import { processUserCreate, processUserUpdate, processUserDelete } from './user_event_handlers';
+import { processUserUpsert, processUserDelete } from './user_event_handlers';
 
 // Utility: Validate required environment variables
 const requiredEnvVars = ['SCALEKIT_ENV_URL', 'SCALEKIT_CLIENT_ID', 'SCALEKIT_CLIENT_SECRET', 'SCALEKIT_WEBHOOK_SECRET'];
@@ -58,10 +58,8 @@ async function processEvent(event: any) {
 
     switch (event.type) {
       case 'scalekit.dir.user.create':
-        await processUserCreate(event);
-        break;
       case 'scalekit.dir.user.update':
-        await processUserUpdate(event);
+        await processUserUpsert(event);
         break;
       case 'scalekit.dir.user.delete':
         await processUserDelete(event);

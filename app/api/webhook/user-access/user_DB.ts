@@ -5,41 +5,52 @@ class UserMockDB {
   private users: User[] = [];
 
  
-  async createUser(user: User): Promise<void> {
-    const index = this.users.findIndex((u) => u.id === user.id);
-    if (index !== -1) {
-      this.users[index] = user; // Replace existing user
-      console.log(`User with ID ${user.id} updated.`);
-    } else {
-      this.users.push(user);
-      console.log(`User created:`, user);
-    }
-  }
+  // Function to create user
+  async createUser(user: Omit<User, 'id'>): Promise<void> {
+    // Generate an auto-incremented ID
+    const generatedId = `${this.users.length + 1}`;
 
-  async updateUser(userId: string, updatedData: Partial<User>): Promise<boolean> {
-    const index = this.users.findIndex((u) => u.id === userId);
+    // Create the new user object
+    const newUser: User = { id: generatedId, ...user };
+
+    // Add the new user to the database (array in this case)
+    this.users.push(newUser);
+    console.log('User created:', newUser);
+  }
+ 
+  // Function to update a user
+  async updateUser(email: string, updatedData: Partial<User>): Promise<boolean> {
+    const index = this.users.findIndex((u) => u.email === email);
+
     if (index !== -1) {
-      this.users[index] = { ...this.users[index], ...updatedData };
+      // Prevent updating the 'id' and 'email' properties
+      const { id, email: userEmail, ...dataToUpdate } = updatedData;
+
+      // Merge the filtered updated data with the existing user data
+      this.users[index] = { ...this.users[index], ...dataToUpdate };
+
       console.log(`User updated:`, this.users[index]);
       return true;
     }
-    console.log(`User not found for update: ${userId}`);
-    return false;
 
+    console.log(`User not found for update: ${email}`);
+    return false;
   }
+
+
   async getUserByEmail(email: string): Promise<User | null> {
     const user = this.users.find((u) => u.email === email);
     return user || null;
   }
 
-  async deleteUserByID(userId: string): Promise<boolean> {
-    const index = this.users.findIndex((u) => u.id === userId);
+  async deleteUserByEmail(email: string): Promise<boolean> {
+    const index = this.users.findIndex((u) => u.email === email);
     if (index !== -1) {
       const deletedUser = this.users.splice(index, 1);
       console.log(`User deleted:`, deletedUser[0]);
       return true;
     }
-    console.log(`User not found for deletion: ${userId}`);
+    console.log(`User not found for deletion: ${email}`);
     return false;
   }
 
