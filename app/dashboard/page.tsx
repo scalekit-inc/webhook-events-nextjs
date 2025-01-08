@@ -76,13 +76,21 @@ export default function Dashboard() {
       <div className="mb-4 text-center">
         <button
           onClick={() => setView('events')}
-          className={`px-4 py-2 rounded ${view === 'events' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          className={`px-6 py-2 rounded-md font-medium text-base transition-colors ${
+            view === 'events'
+              ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
         >
           Events
         </button>
         <button
           onClick={() => setView('users')}
-          className={`ml-4 px-4 py-2 rounded ${view === 'users' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          className={`ml-4 px-6 py-2 rounded-md font-medium text-base transition-colors ${
+            view === 'users'
+              ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
         >
           Users
         </button>
@@ -96,13 +104,13 @@ export default function Dashboard() {
               {events.map((evnt: any, index: number) => (
                 <li
                   key={evnt.id || index}
-                  className="bg-gray-100 rounded-lg p-4 shadow"
+                  className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:border-indigo-200 transition-colors"
                 >
-                  <h3 className="text-xl font-semibold mb-2">
-                    {/* Use event's type as the name */}
-                    {` ${evnt.data.type} for ${evnt.data.data.email} ` || `Event ${evnt}`}
+                  <h3 className="text-xl font-semibold mb-2 text-gray-900">
+                    {` ${evnt.data.type} for ${evnt.data.data.email} ` ||
+                      `Event ${evnt}`}
                   </h3>
-                  <pre className="bg-white p-3 rounded overflow-x-auto text-sm">
+                  <pre className="bg-gray-50 p-3 rounded overflow-x-auto text-sm text-gray-700 border border-gray-100">
                     {JSON.stringify(evnt, null, 2)}
                   </pre>
                 </li>
@@ -119,14 +127,14 @@ export default function Dashboard() {
               {users.map((user: any, index: number) => (
                 <li
                   key={user.id || index}
-                  className="bg-gray-100 rounded-lg p-4 shadow"
+                  className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:border-indigo-200 transition-colors"
                 >
-                  <h3 className="text-xl font-semibold mb-2">
+                  <h3 className="text-xl font-semibold mb-2 text-gray-900">
                     {user.name || `User ${index + 1}`}
                   </h3>
-                  <pre className="bg-white p-3 rounded overflow-x-auto text-sm">
+                  {/* <pre className="bg-gray-50 p-3 rounded overflow-x-auto text-sm text-gray-700 border border-gray-100">
                     {JSON.stringify(user, null, 2)}
-                  </pre>
+                  </pre> */}
                 </li>
               ))}
             </ul>
