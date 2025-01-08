@@ -2,9 +2,24 @@
 
 import { useEffect, useState } from 'react';
 
+interface Event {
+  id?: string;
+  data?: {
+    email?: string;
+    name?: string;
+    given_name?: string;
+    created?: string;
+  };
+  meta?: {
+    created?: string;
+  };
+  [key: string]: any;
+}
+
 export default function Dashboard() {
-  const [events, setEvents] = useState([]);
-  const [error, setError] = useState(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedEvents, setExpandedEvents] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchEvents();
@@ -13,11 +28,9 @@ export default function Dashboard() {
       try {
         const response = await fetch('/api/webhook/user-access');
         const data = await response.json();
-        console.log('Raw API response:', data); // Log the raw API response
 
         if (Array.isArray(data.events)) {
           setEvents(data.events);
-          console.log('Fetched events:', data.events);
         } else {
           console.error('API did not return an array:', data);
           setError('Received invalid data format from API');
@@ -29,13 +42,22 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Log events whenever they change
-  useEffect(() => {
-    console.log('Current events state:', events);
-  }, [events]);
+  const toggleExpand = (index: number) => {
+    const newExpanded = new Set(expandedEvents);
+    if (expandedEvents.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedEvents(newExpanded);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div className="text-red-500">Error: {error}</div>;
   }
 
   return (
@@ -43,17 +65,47 @@ export default function Dashboard() {
       <h2 className="text-3xl font-bold mb-6 text-center">Dashboard Events</h2>
       {Array.isArray(events) && events.length > 0 ? (
         <ul className="space-y-4">
-          {events.map((evnt: any, index: number) => (
+          {events.map((event: Event, index: number) => (
             <li
-              key={evnt.id || index}
-              className="bg-gray-100 rounded-lg p-4 shadow"
+              key={event.id || index}
+              className="bg-white rounded-lg p-4 shadow border border-gray-200 hover:border-blue-300 transition-colors duration-200"
             >
-              <h3 className="text-xl font-semibold mb-2">
-                {evnt.name || `Event ${index + 1}`}
-              </h3>
-              <pre className="bg-white p-3 rounded overflow-x-auto text-sm">
-                {JSON.stringify(evnt, null, 2)}
-              </pre>
+              <div
+                className="cursor-pointer"
+                onClick={() => toggleExpand(index)}
+              >
+                <div className="flex justify-between items-center">
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {event.data?.name ||
+                        event.data?.given_name ||
+                        'Unnamed Event'}
+                    </h3>
+                    <div className="text-sm text-gray-600">
+                      {event.data?.email && <p>📧 {event.data.email}</p>}
+                      {(event.meta?.created || event.data?.created) && (
+                        <p>
+                          🕒{' '}
+                          {formatDate(
+                            event.meta?.created || event.data?.created,
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-blue-500">
+                    {expandedEvents.has(index) ? '▼' : '▶'}
+                  </div>
+                </div>
+              </div>
+
+              {expandedEvents.has(index) && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <pre className="bg-gray-50 p-3 rounded overflow-x-auto text-sm text-gray-800">
+                    {JSON.stringify(event, null, 2)}
+                  </pre>
+                </div>
+              )}
             </li>
           ))}
         </ul>
