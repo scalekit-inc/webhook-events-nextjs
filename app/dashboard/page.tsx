@@ -5,8 +5,22 @@ import { useEffect, useState } from 'react';
 export default function Dashboard() {
   const [events, setEvents] = useState([]);
   const [users, setUsers] = useState([]);
-  const [error, setError] = useState(null);
-  const [view, setView] = useState('events'); // New state to track which view is selected
+  const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState('events');
+  const [expandedItems, setExpandedItems] = useState(new Set());
+
+  // Toggle expansion of an item
+  const toggleExpand = (id: string | number) => {
+    setExpandedItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
   // Fetch data based on the selected view (events or users)
   useEffect(() => {
@@ -101,20 +115,34 @@ export default function Dashboard() {
         <div>
           {Array.isArray(events) && events.length > 0 ? (
             <ul className="space-y-4">
-              {events.map((evnt: any, index: number) => (
-                <li
-                  key={evnt.id || index}
-                  className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:border-indigo-200 transition-colors"
-                >
-                  <h3 className="text-xl font-semibold mb-2 text-gray-900">
-                    {` ${evnt.data.type} for ${evnt.data.data.email} ` ||
-                      `Event ${evnt}`}
-                  </h3>
-                  <pre className="bg-gray-50 p-3 rounded overflow-x-auto text-sm text-gray-700 border border-gray-100">
-                    {JSON.stringify(evnt, null, 2)}
-                  </pre>
-                </li>
-              ))}
+              {[...events].reverse().map((evnt: any, index: number) => {
+                const itemId = evnt.id || `event-${index}`;
+                const isExpanded = expandedItems.has(itemId);
+                return (
+                  <li
+                    key={itemId}
+                    className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:border-indigo-200 transition-colors"
+                  >
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {` ${evnt.data.type} for ${evnt.data.data.email} ` ||
+                          `Event ${evnt}`}
+                      </h3>
+                      <button
+                        onClick={() => toggleExpand(itemId)}
+                        className="px-3 py-1 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                      >
+                        {isExpanded ? 'Collapse' : 'Expand'}
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <pre className="mt-3 bg-gray-50 p-3 rounded overflow-x-auto text-sm text-gray-700 border border-gray-100">
+                        {JSON.stringify(evnt, null, 2)}
+                      </pre>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-center text-gray-500">No events to display</p>
@@ -124,19 +152,33 @@ export default function Dashboard() {
         <div>
           {Array.isArray(users) && users.length > 0 ? (
             <ul className="space-y-4">
-              {users.map((user: any, index: number) => (
-                <li
-                  key={user.id || index}
-                  className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:border-indigo-200 transition-colors"
-                >
-                  <h3 className="text-xl font-semibold mb-2 text-gray-900">
-                    {user.name || `User ${index + 1}`}
-                  </h3>
-                  {/* <pre className="bg-gray-50 p-3 rounded overflow-x-auto text-sm text-gray-700 border border-gray-100">
-                    {JSON.stringify(user, null, 2)}
-                  </pre> */}
-                </li>
-              ))}
+              {[...users].reverse().map((user: any, index: number) => {
+                const itemId = user.id || `user-${index}`;
+                const isExpanded = expandedItems.has(itemId);
+                return (
+                  <li
+                    key={itemId}
+                    className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:border-indigo-200 transition-colors"
+                  >
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {user.name || `User ${index + 1}`}
+                      </h3>
+                      <button
+                        onClick={() => toggleExpand(itemId)}
+                        className="px-3 py-1 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                      >
+                        {isExpanded ? 'Collapse' : 'Expand'}
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <pre className="mt-3 bg-gray-50 p-3 rounded overflow-x-auto text-sm text-gray-700 border border-gray-100">
+                        {JSON.stringify(user, null, 2)}
+                      </pre>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-center text-gray-500">No users to display</p>

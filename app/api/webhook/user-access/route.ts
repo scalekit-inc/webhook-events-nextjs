@@ -3,15 +3,7 @@ import eventMockDB from './store';
 import { ScalekitClient } from '@scalekit-sdk/node';
 import { processUserUpsert, processUserDelete } from './user_event_handlers';
 
-// Utility: Validate required environment variables
-const requiredEnvVars = ['SCALEKIT_ENV_URL', 'SCALEKIT_CLIENT_ID', 'SCALEKIT_CLIENT_SECRET', 'SCALEKIT_WEBHOOK_SECRET'];
-requiredEnvVars.forEach((varName) => {
-  if (!process.env[varName]) {
-    throw new Error(`${varName} is required`);
-  }
-});
-
-// Initialize Scalekit client
+// Initialize Scalekit client with environment variables
 const scalekit = new ScalekitClient(
   process.env.SCALEKIT_ENV_URL!,
   process.env.SCALEKIT_CLIENT_ID!,
@@ -22,7 +14,6 @@ const scalekit = new ScalekitClient(
  * Webhook Endpoint: /api/webhook/user-access
  * Handles POST requests to process Scalekit webhook events.
  */
-
 export async function POST(req: NextRequest) {
   try {
     const event = await req.json();
@@ -39,9 +30,7 @@ export async function POST(req: NextRequest) {
     await eventMockDB.insertEvent(event);
 
     // Process the event asynchronously
-    setImmediate(async () => await processEvent(event));
-
-    // Return success response
+    setImmediate(async () => await renderToDashboard(event));
     return NextResponse.json({ message: 'Webhook received' }, { status: 201 });
   } catch (error: any) {
     console.error('Error verifying webhook:', error.message);
@@ -50,9 +39,9 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * Handles specific event processing.
+ * Processes the event and updates the dashboard.
  */
-async function processEvent(event: any) {
+async function renderToDashboard(event: any) {
   try {
     console.log('Processing event:', event);
 
@@ -75,13 +64,18 @@ async function processEvent(event: any) {
 /**
  * Fetches all stored events.
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const events = await eventMockDB.getAllEvents();
-    return NextResponse.json({ message: 'Events retrieved', events }, { status: 200 });
+    return NextResponse.json(
+      { message: 'Events retrieved', events },
+      { status: 200 },
+    );
   } catch (error: any) {
     console.error('Error fetching events:', error.message);
-    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch events' },
+      { status: 500 },
+    );
   }
 }
-
