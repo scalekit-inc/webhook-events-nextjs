@@ -25,14 +25,14 @@ const scalekit = new ScalekitClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const event = await req.json();
+    const event = await req.text();
 
     // Convert headers to a plain object
     const headers = Object.fromEntries(req.headers.entries());
     const secret = process.env.SCALEKIT_WEBHOOK_SECRET!;
 
     // Verify the webhook payload
-    await scalekit.verifyWebhookPayload(secret, headers, JSON.stringify(event));
+    await scalekit.verifyWebhookPayload(secret, headers, event);
     console.log('Webhook verification passed');
 
     // Store the event
